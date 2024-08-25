@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alex's Simple CSV/JSON Chart Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/css/chart.css">
+</head>
+<body>
+    <h1>Alex's Simple CSV/JSON Chart Generator</h1>
+    
+    <label for="dataInput">Paste JSON or CSV data:</label><br>
+    <textarea id="dataInput" rows="10" cols="50" placeholder='e.g., [{"label": "A", "value": 10}, {"label": "B", "value": 20}] or "Label,Value\nA,10\nB,20"'></textarea><br><br>
+
+    <label for="chartType">Select Chart Type:</label>
+    <select id="chartType">
+        <option value="bar">Bar</option>
+        <option value="line">Line</option>
+        <option value="pie">Pie</option>
+        <option value="doughnut">Doughnut</option>
+    </select><br><br>
+
+    <label for="backgroundColor">Background Color:</label>
+    <input type="color" id="backgroundColor" value="#4bc0c0"><br><br>
+
+    <label for="borderColor">Border Color:</label>
+    <input type="color" id="borderColor" value="#4bc0c0"><br><br>
+
+    <label for="chartTitle">Chart Title:</label>
+    <input type="text" id="chartTitle" placeholder="Enter title"><br><br>
+
+    <label for="xAxisLabel">X-Axis Label:</label>
+    <input type="text" id="xAxisLabel" placeholder="Enter X-axis label"><br><br>
+
+    <label for="yAxisLabel">Y-Axis Label:</label>
+    <input type="text" id="yAxisLabel" placeholder="Enter Y-axis label"><br><br>
+
+    <button onclick="generateChart()">Generate Chart</button><br><br>
+
+    <div style="width: 100%; display: flex; justify-content: center;">
+        <canvas id="myChart"></canvas>
+    </div>
+
+    <script>
+        function generateChart() {
+            const dataInput = document.getElementById('dataInput').value;
+            const chartType = document.getElementById('chartType').value;
+            const chartWidth = 1800
+            const chartHeight = 600
+            const backgroundColor = document.getElementById('backgroundColor').value;
+            const borderColor = document.getElementById('borderColor').value;
+            const chartTitle = document.getElementById('chartTitle').value;
+            const xAxisLabel = document.getElementById('xAxisLabel').value;
+            const yAxisLabel = document.getElementById('yAxisLabel').value;
+
+            let parsedData;
+            
+            try {
+                if (dataInput.trim().startsWith('[')) {
+                    parsedData = JSON.parse(dataInput);
+                } else {
+                    parsedData = csvToJson(dataInput);
+                }
+            } catch (e) {
+                alert('Invalid JSON or CSV data.');
+                return;
+            }
+
+            const labels = parsedData.map(item => item.label);
+            const data = parsedData.map(item => item.value);
+
+            const canvas = document.getElementById('myChart');
+            canvas.width = chartWidth;
+            canvas.height = chartHeight;
+
+            const ctx = canvas.getContext('2d');
+
+            // Check if myChart is already initialized and is an instance of Chart
+            if (window.myChart instanceof Chart) {
+                window.myChart.destroy();
+            }
+
+            window.myChart = new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Dataset',
+                        data: data,
+                        backgroundColor: backgroundColor,
+                        borderColor: borderColor,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: chartTitle !== '',
+                            text: chartTitle
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: xAxisLabel !== '',
+                                text: xAxisLabel
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: yAxisLabel !== '',
+                                text: yAxisLabel
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function csvToJson(csv) {
+            const lines = csv.split('\n').filter(line => line.trim() !== '');
+            const headers = lines[0].split(',');
+            const result = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const obj = {};
+                const currentLine = lines[i].split(',');
+
+                headers.forEach((header, index) => {
+                    obj[header.trim()] = currentLine[index].trim();
+                });
+
+                result.push({
+                    label: obj[headers[0]],
+                    value: parseFloat(obj[headers[1]])
+                });
+            }
+
+            return result;
+        }
+    </script>
+</body>
+</html>
